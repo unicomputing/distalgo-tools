@@ -1,0 +1,69 @@
+config(handling = one)
+class Normal: pass
+
+class Sim(process):
+	def setup():
+		self._crash = False
+		self._crash_timestamp = 0
+
+	def run(): pass
+
+	def send(message, to, channel=None, **rest):
+		# output('====send', message, to)
+		
+		# if a message are sending to processes not an inheritence of Sim,
+		# do not wrap it with (Normal, )
+		if isinstance(to, set) or isinstance(to, list):
+			for t in to:
+				# try:
+					# output(type(to),issubclass(t.pcls,Sim))
+				if issubclass(t.pcls,Sim):
+					super().send((Normal, message), t, channel, **rest)
+				else:
+					super().send(message, t, channel, **rest)
+				# except Exception:
+				# 	output('===============',type(to),'===============')
+		else:
+			if issubclass(to.pcls,Sim):
+				super().send((Normal, message), to, channel, **rest)
+			else:
+				super().send(message, to, channel, **rest)
+
+
+
+	def receive(msg=(_Normal, message), from_=src):
+		# output('====receive normal', message, src)
+		try:
+			# output('====receive normal', message, src)
+			# when receiving a crash message, set the state of the process to crash
+			# and await only for recover message
+			if message[0] == '__crash__':
+				self._crash = True
+				output('crashed')
+				timestamp = message[1]
+				await(some(received((_Normal, ('__recover__', t))), has= t > timestamp))
+				self._crash = False
+				output('recovered')
+			elif not self._crash:
+				super().send(message, to=self, impersonate=src)
+		except Exception:
+			if not self._crash:
+				super().send(message, to=self, impersonate=src)
+
+	def crash(procs):
+		_crash_timestamp += 1
+		send(('__crash__', _crash_timestamp),to= procs)
+		
+
+	def recover(procs):
+		_crash_timestamp += 1
+		send(('__recover__', _crash_timestamp),to= procs)
+		
+
+
+
+
+
+
+
+
