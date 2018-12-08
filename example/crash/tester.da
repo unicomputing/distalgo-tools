@@ -1,0 +1,50 @@
+# this code copies everything in main function in vrpaxos.da
+# and added the statement of super().crash(p) and super().recover(p)
+
+import sys
+import random
+from vrpaxos import Acceptor, Replica, Leader, Client
+
+import os
+sys.path.append(os.path.abspath('../../'))
+import sim
+
+class Test(process, sim.Sim):
+    def setup():
+        super().setup()
+
+    def run():
+        nacceptors = int(sys.argv[1]) if len(sys.argv) > 1 else 5
+        nreplicas = int(sys.argv[2]) if len(sys.argv) > 2 else 4
+        nleaders = int(sys.argv[3]) if len(sys.argv) > 3 else 2
+        nclients = int(sys.argv[4]) if len(sys.argv) > 4 else 3
+        nops = int(sys.argv[5]) if len(sys.argv) > 5 else 10
+
+        acceptors = new(Acceptor, (), num= nacceptors)
+        replicas = new(Replica, num= nreplicas)
+        leaders = new(Leader, (acceptors, replicas), num= nleaders)
+        initial_state = [];  setup(replicas, (leaders, initial_state))
+        clients = new(Client, (replicas, nops), num= nclients)
+
+        start(acceptors)
+        start(replicas | leaders)
+        start(clients)
+
+
+        procs = random.sample((acceptors|replicas|leaders), int((nacceptors+nreplicas+nleaders)/2))
+        super().crash(procs)
+        if await(False):
+            pass
+        elif timeout(2):
+            super().recover(procs)
+        # time.sleep(2)
+        # super().recover(procs)
+
+        await(each(c in clients, has=received(('done',), from_=c)))
+        output('All clients done.')
+        send(('done',), to= (acceptors|replicas|leaders))
+
+
+def main():
+    tester = new(Test, (), num= 1)
+    start(tester)

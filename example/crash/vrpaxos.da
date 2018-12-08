@@ -1,3 +1,5 @@
+# this code is exactly the vrpaxos example in distalgo except each class inherit the sim.Sim class
+
 import sys
 import time
 import random
@@ -6,7 +8,7 @@ import os
 sys.path.append(os.path.abspath('../../'))
 import sim
 
-NOPS = 30  # number of different operations that the state machine can do
+NOPS = 10  # number of different operations that the state machine can do
 # operation i maps a state to a pair of new state and result of i on state
 def operation(i): return lambda state: (state+[i], ['result',i,'on',state])
 operations = {i: operation(i) for i in range(NOPS)}
@@ -188,45 +190,28 @@ class Client(process, sim.Sim):
         count[cid] = 1 if cid not in count else count[cid] + 1
 
 
-class Test(process, sim.Sim):
-    def setup():
-        super().setup()
-
-    def run():
-        nacceptors = int(sys.argv[1]) if len(sys.argv) > 1 else 5
-        nreplicas = int(sys.argv[2]) if len(sys.argv) > 2 else 4
-        nleaders = int(sys.argv[3]) if len(sys.argv) > 3 else 2
-        nclients = int(sys.argv[4]) if len(sys.argv) > 4 else 3
-        nops = int(sys.argv[5]) if len(sys.argv) > 5 else 10
-
-        acceptors = new(Acceptor, (), num= nacceptors)
-        replicas = new(Replica, num= nreplicas)
-        leaders = new(Leader, (acceptors, replicas), num= nleaders)
-        initial_state = [];  setup(replicas, (leaders, initial_state))
-        clients = new(Client, (replicas, nops), num= nclients)
-
-        start(acceptors)
-        start(replicas | leaders)
-        start(clients)
-
-
-        procs = random.sample((acceptors|replicas|leaders), int((nacceptors+nreplicas+nleaders)/2))
-        super().crash(procs)
-        if await(False):
-            pass
-        elif timeout(2):
-            super().recover(procs)
-        # time.sleep(2)
-        # super().recover(procs)
-
-        await(each(c in clients, has=received(('done',), from_=c)))
-        output('All clients done.')
-        send(('done',), to= (acceptors|replicas|leaders))
 
 
 def main():
-    tester = new(Test, (), num= 1)
-    start(tester)
+    nacceptors = int(sys.argv[1]) if len(sys.argv) > 1 else 5
+    nreplicas = int(sys.argv[2]) if len(sys.argv) > 2 else 4
+    nleaders = int(sys.argv[3]) if len(sys.argv) > 3 else 2
+    nclients = int(sys.argv[4]) if len(sys.argv) > 4 else 3
+    nops = int(sys.argv[5]) if len(sys.argv) > 5 else 3
+
+    acceptors = new(Acceptor, (), num= nacceptors)
+    replicas = new(Replica, num= nreplicas)
+    leaders = new(Leader, (acceptors, replicas), num= nleaders)
+    initial_state = [];  setup(replicas, (leaders, initial_state))
+    clients = new(Client, (replicas, nops), num= nclients)
+
+    start(acceptors)
+    start(replicas | leaders)
+    start(clients)
+
+    await(each(c in clients, has=received(('done',), from_=c)))
+    output('All clients done.')
+    send(('done',), to= (acceptors|replicas|leaders))
 
 # This code includes setup and termination for each client to request and
 # complete a number of operations.
