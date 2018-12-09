@@ -5,5 +5,5 @@ Usage
 
 Example 
 * vrpaxos.da is copied from https://github.com/DistAlgo/distalgo/blob/master/da/examples/vrpaxos/orig.da except that each class additionally inherits sim.Sim.
-* tester.da puts the main function of orig.da in a Test class and adds calls to crash and recover.
+* tester.da puts the main function of the orig.da in a Test class and adds calls to crash and recover.
 * run tester.da to see the simulation
