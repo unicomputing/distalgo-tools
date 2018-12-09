@@ -1,7 +1,7 @@
 Usage
 1. all processes should inherit class sim.Sim
-2. call super().crash(procs) to crash procs, and
-   call super().recover(procs) to recover
+2. call super().crash(ps) to crash process or processes ps, and
+   call super().recover(ps) to recover ps
 
 Example 
 * vrpaxos.da is copied from https://github.com/DistAlgo/distalgo/blob/master/da/examples/vrpaxos/orig.da except that each class additionally inherits sim.Sim.
