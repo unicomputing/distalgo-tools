@@ -19,15 +19,15 @@ class Sim(process):
 					# output(type(to),issubclass(t.pcls,Sim))
 				if issubclass(t.pcls,Sim):
 					super().send((Normal, message), t, channel, **rest)
-				else:
-					super().send(message, t, channel, **rest)
+				# else:
+				super().send(message, t, channel, **rest)
 				# except Exception:
 				# 	output('===============',type(to),'===============')
 		else:
 			if issubclass(to.pcls,Sim):
 				super().send((Normal, message), to, channel, **rest)
-			else:
-				super().send(message, to, channel, **rest)
+			# else:
+			super().send(message, to, channel, **rest)
 
 
 
