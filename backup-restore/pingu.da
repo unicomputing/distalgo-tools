@@ -1,0 +1,45 @@
+import sys
+import pickle
+logger = import_da('logger')
+
+class Pong(process, logger.Logger):
+    def setup(total_pings:int, lgr): 
+        super().setup(lgr, str(self))
+
+    @logger.run
+    def run():
+        await(total_pings == 0)
+
+    def receive(msg=('Ping',k,), from_=p):
+        super().prereceive(('Ping', k,), p)
+        send(('Pong',), to=p)
+        total_pings -= 1
+
+class Ping(process):
+    def setup(p:Pong, nrounds:int): pass
+
+    def run():
+        for i in range(nrounds):
+            clk = logical_clock()
+            send(('Ping',2,), to=p)
+            await(some(received(('Pong',), clk=rclk), has=(rclk > clk)))
+
+    def receive(msg=('Pong',)):
+        output("Ponged.")
+
+def main():
+    nrounds = int(sys.argv[1]) if len(sys.argv) > 1 else 2
+    npings = int(sys.argv[2]) if len(sys.argv) > 2 else 2
+    config(clock='Lamport')
+    lgr = new(logger.Controller, num= 1)
+    setup(lgr, (1,))
+    start(lgr)
+    pong = new(Pong, num= 3)
+    ping = new(Ping, num= npings)
+    """
+    after the run try to pickle and read back attributes
+    """
+    setup(pong, (nrounds * npings, lgr))
+    setup(ping, (pong, nrounds))
+    start(pong)
+    start(ping)

@@ -1,0 +1,100 @@
+import sys
+import pickle
+
+class Controller(process):
+    
+    def setup(nprocs, threshold=None):
+        # Number of done messages we should receive before sending
+        # stop messages to everyone else.
+        if threshold is None:
+            threshold = nprocs
+        
+        # Processes we are controlling (populated when we receive
+        # ready messages from them), and the subset of processes
+        # from which we have received done messages.
+        self.ps = set()
+        self.done_ps = set()
+        # Number of processes that have sent ready/done messages.
+        self.readys = 0
+        self.dones = 0
+        # Whether we have sent the stop messages out.
+        self.sent_stop = False
+        
+        self.process_file_map = dict()
+    
+    def receive(msg=('LGR_Ready', proc, file), from_=source):
+        # Count readys.
+        ps.add(source)
+        readys += 1
+        process_file_map[proc] = file
+    
+    def receive(msg=('LGR_Done',), from_=source):
+        # Count dones, record metrics.
+        dones += 1
+        done_ps.add(source)
+        # If the threshold is reached, send stop to everyone else.
+        if dones >= threshold and not self.sent_stop:
+            rest_ps = ps - done_ps
+            send(('LGR_Stop',), to=rest_ps)
+            self.sent_stop = True
+    
+    def run():
+        # Start 'em up.
+        await(readys == nprocs)
+
+        send(('LGR_Start',), to=ps)
+        
+        # Shut 'em down.
+        await(dones == nprocs)
+        send(('LGR_Terminate',), to=ps)
+        output("Mapping is here:")
+        output(process_file_map)
+
+class Logger(process):
+    
+    def setup(lgr, identifier="something"):
+        self.lgr_done = False
+        self.logs = []
+        self.pickled = ()
+        self.unpickled_logs = ()
+    
+    def begin():
+        send(('LGR_Ready', identifier, identifier + "-backup"), to=lgr)
+        await(received(('LGR_Start',)))
+    
+    def end():
+        self.lgr_done = True
+        send(('LGR_Done',), to=lgr)
+        await(received(('LGR_Terminate',)))
+    
+    def prereceive(msg, fr):
+        logs.append((msg, fr))
+        pickled = pickle.dumps(logs)
+        output("### Pickled log")
+        output(pickled)
+        unpickled_logs = pickle.loads(pickled)
+        output("### Unpickled log")
+        output(unpickled_logs)
+
+
+    def receive(msg=('LGR_Stop',)):
+        if self.lgr_done:
+            return
+        end()
+        exit()
+    
+    def run():
+        # Stub to squelch warning.
+        pass
+
+def run(func):
+    """Decorator for Process.run() to call logger hooks."""
+    def lgr_run(self):
+        self.begin()
+        func(self)
+        self.end()
+    
+    return lgr_run
+
+def main():
+    pass
